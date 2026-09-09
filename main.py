@@ -34,3 +34,12 @@ def receive_location(animal_id: str, latitude: float, longitude: float):
     )
     conn.commit()
     return {"status": "saved"}
+
+# Returns the most recent location for one specific animal.
+@app.get("/location/{animal_id}")
+def get_latest_location(animal_id: str):
+    row = conn.execute(
+        "SELECT latitude, longitude, timestamp FROM locations WHERE animal_id = ? ORDER BY id DESC LIMIT 1",
+        (animal_id,)
+    ).fetchone()
+    return {"latitude": row[0], "longitude": row[1], "timestamp": row[2]}
