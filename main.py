@@ -18,6 +18,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# The center point and radius of our grazing boundary, in meters.
+BOUNDARY_LAT = 5.6037
+BOUNDARY_LON = -0.1870
+BOUNDARY_RADIUS = 200
+
+# Calculates distance in meters between two GPS points, same formula as the dashboard.
+import math
+
+def get_distance(lat1, lon1, lat2, lon2):
+    R = 6371000
+    dLat = math.radians(lat2 - lat1)
+    dLon = math.radians(lon2 - lon1)
+    a = math.sin(dLat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dLon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
 # Connects to (or creates) a database file called "locations.db".
 conn = sqlite3.connect("locations.db", check_same_thread=False)
 
@@ -32,12 +48,22 @@ conn.execute("""
     )
 """)
 
+# Creates a table to record every time the animal crosses the boundary.
+conn.execute("""
+    CREATE TABLE IF NOT EXISTS alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        animal_id TEXT,
+        message TEXT,
+        timestamp TEXT
+    )
+""")
+
 # A simple "front door" that confirms the backend is alive and responding.
 @app.get("/")
 def health_check():
     return {"status": "backend is running"}
 
-# Accepts a location reading, saves it to the database, and confirms receipt.
+# Accepts a location reading, saves it, checks the boundary, and logs an alert if crossed.
 @app.post("/location")
 def receive_location(animal_id: str, latitude: float, longitude: float):
     conn.execute(
@@ -45,6 +71,15 @@ def receive_location(animal_id: str, latitude: float, longitude: float):
         (animal_id, latitude, longitude)
     )
     conn.commit()
+
+    distance = get_distance(BOUNDARY_LAT, BOUNDARY_LON, latitude, longitude)
+    if distance > BOUNDARY_RADIUS:
+        conn.execute(
+            "INSERT INTO alerts (animal_id, message, timestamp) VALUES (?, ?, datetime('now'))",
+            (animal_id, f"{animal_id} has left its assigned grazing boundary")
+        )
+        conn.commit()
+
     return {"status": "saved"}
 
 # Returns the most recent location for one specific animal.
