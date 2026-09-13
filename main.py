@@ -90,3 +90,12 @@ def get_latest_location(animal_id: str):
         (animal_id,)
     ).fetchone()
     return {"latitude": row[0], "longitude": row[1], "timestamp": row[2]}
+
+# Returns every saved location for one specific animal, oldest to newest.
+@app.get("/history/{animal_id}")
+def get_location_history(animal_id: str):
+    rows = conn.execute(
+        "SELECT latitude, longitude, timestamp FROM locations WHERE animal_id = ? ORDER BY id ASC",
+        (animal_id,)
+    ).fetchall()
+    return [{"latitude": r[0], "longitude": r[1], "timestamp": r[2]} for r in rows]
