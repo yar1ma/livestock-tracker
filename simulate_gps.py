@@ -1,5 +1,6 @@
-# Brings in the tool that lets this script send data over the web.
-import requests
+# Brings in Python's own built-in tools for sending web requests, no extra install needed.
+import urllib.request
+import urllib.parse
 
 # Brings in "time" so we can pause between each fake reading.
 import time
@@ -16,9 +17,14 @@ while True:
     latitude += random.uniform(-0.0005, 0.0005)
     longitude += random.uniform(-0.0005, 0.0005)
 
-    response = requests.post(
-        "http://127.0.0.1:8000/location",
-        params={"animal_id": "cow001", "latitude": latitude, "longitude": longitude}
-    )
-    print(response.json())
+    params = urllib.parse.urlencode({
+        "animal_id": "cow001",
+        "latitude": latitude,
+        "longitude": longitude
+    })
+    url = f"http://127.0.0.1:8000/location?{params}"
+
+    response = urllib.request.urlopen(url, data=b"")
+    print(response.read().decode())
+
     time.sleep(5)
