@@ -13,7 +13,7 @@ app = FastAPI()
 # Allows requests from our dashboard's address, which browsers block by default.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
