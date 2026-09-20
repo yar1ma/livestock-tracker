@@ -91,6 +91,19 @@ def get_latest_location(animal_id: str):
     ).fetchone()
     return {"latitude": row[0], "longitude": row[1], "timestamp": row[2]}
 
+# Returns the latest known location for every animal that has ever reported one.
+@app.get("/locations")
+def get_all_latest_locations():
+    animal_ids = conn.execute("SELECT DISTINCT animal_id FROM locations").fetchall()
+    results = []
+    for (animal_id,) in animal_ids:
+        row = conn.execute(
+            "SELECT latitude, longitude, timestamp FROM locations WHERE animal_id = ? ORDER BY id DESC LIMIT 1",
+            (animal_id,)
+        ).fetchone()
+        results.append({"animal_id": animal_id, "latitude": row[0], "longitude": row[1], "timestamp": row[2]})
+    return results
+
 # Returns every saved location for one specific animal, oldest to newest.
 @app.get("/history/{animal_id}")
 def get_location_history(animal_id: str):
