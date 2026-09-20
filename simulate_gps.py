@@ -26,7 +26,7 @@ while True:
             "latitude": pos["lat"],
             "longitude": pos["lon"]
         })
-        url = f"http://127.0.0.1:8000/location?{params}"
+        url = f"https://livestock-tracker-ucus.onrender.com/location?{params}"
 
         response = urllib.request.urlopen(url, data=b"")
         print(response.read().decode())
